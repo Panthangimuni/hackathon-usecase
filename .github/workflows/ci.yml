@@ -1,55 +1,25 @@
-name: Microservices CI Pipeline
+name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-
-env:
-  PROJECT_ID: your-gcp-project-id
-  REGISTRY: gcr.io
+    branches: [ main ]
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    # Authenticate with Google Cloud
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
+    - name: Setup Java
+      uses: actions/setup-java@v3
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        distribution: 'temurin'
+        java-version: '17'
 
-    - name: Configure Docker for GCR
-      run: gcloud auth configure-docker
+    - name: Build Service
+      run: mvn clean package
 
-    # Build Order Service
-    - name: Build Order Service Image
-      run: |
-        docker build -t $REGISTRY/$PROJECT_ID/order-service:v1 ./order-service
-
-    - name: Push Order Service Image
-      run: |
-        docker push $REGISTRY/$PROJECT_ID/order-service:v1
-
-    # Build Patient Service
-    - name: Build Patient Service Image
-      run: |
-        docker build -t $REGISTRY/$PROJECT_ID/patient-service:v1 ./patient-service
-
-    - name: Push Patient Service Image
-      run: |
-        docker push $REGISTRY/$PROJECT_ID/patient-service:v1
-
-    # Build Application Service
-    - name: Build Application Service Image
-      run: |
-        docker build -t $REGISTRY/$PROJECT_ID/application-service:v1 ./application-service
-
-    - name: Push Application Service Image
-      run: |
-        docker push $REGISTRY/$PROJECT_ID/application-service:v1
+    - name: Build Docker Image
+      run: docker build -t order-service:v1 .
